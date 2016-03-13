@@ -4,6 +4,7 @@
 #include "CaveGenerator2D.h"
 
 #include "KismetProceduralMeshLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 ACaveGenerator2D::ACaveGenerator2D(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -20,9 +21,17 @@ ACaveGenerator2D::ACaveGenerator2D(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	ProceduralMeshComponent = ObjectInitializer.CreateDefaultSubobject<UProceduralMeshComponent>(this, TEXT("ProceduralMeshComponent"));
+
+	
 }
 
+void ACaveGenerator2D::BeginPlay()
+{
+	Super::BeginPlay();
 
+	UKismetProceduralMeshLibrary::GenerateBoxMesh(FVector(CellsSizeX, CellsSizeY, CellsSizeZ), Vertices, Triangles, Normals, UVs, Tangents);
+	CellsIndex = 0;
+}
 
 void ACaveGenerator2D::InitCells()
 {
@@ -39,49 +48,6 @@ void ACaveGenerator2D::InitCells()
 	}
 	CellsMap = MakeShareable(new FCellsMap(CellsX, CellsY, 1, InitialPercentAliveChance));
 
-}
-
-
-
-void ACaveGenerator2D::ShowCells()
-{
-	// Template cube with 24 vertices
-	TArray<FVector> Vertices;
-	TArray<int32> Triangles;
-	TArray<FVector> Normals;
-	TArray<FVector2D> UVs;
-	TArray<FColor> Colors;
-	TArray<FProcMeshTangent> Tangents;
-	UKismetProceduralMeshLibrary::GenerateBoxMesh(FVector(CellsSizeX, CellsSizeY, CellsSizeZ), Vertices, Triangles, Normals, UVs, Tangents);
-
-	// Clear previous data
-	ProceduralMeshComponent->ClearAllMeshSections();
-
-	// Cube instance, its vertices
-	TArray<FVector> V;
-
-	int CellsIndex = 0;
-	for (uint8 x = 0; x < CellsX; x++)
-	{
-		for (uint8 y = 0; y < CellsY; y++)
-		{
-			if (CellsMap->IsCellAliveNoIndexCheck(x, y, 0))
-			{
-				V.Reset();
-				V.AddUninitialized(24);
-
-				for (int i = 0; i < 24; i++)
-				{
-					V[i].X = Vertices[i].X + CellsLocOffsetX * x;
-					V[i].Y = Vertices[i].Y + CellsLocOffsetY * y;
-					V[i].Z = Vertices[i].Z;
-				}
-
-				ProceduralMeshComponent->CreateMeshSection(CellsIndex, V, Triangles, Normals, UVs, Colors, Tangents, true);
-				CellsIndex++;
-			}
-		}
-	}
 }
 
 void ACaveGenerator2D::ProcessCellsAsync()
@@ -119,4 +85,76 @@ void ACaveGenerator2D::ProcessingDoneHandler()
 	ProcessingDone();
 }
 
+FVector ACaveGenerator2D::WorldToLocal(const FVector& Location)
+{
+	FVector locdiff = Location - GetActorLocation();
+	FRotator rot = GetActorRotation();
+	return rot.RotateVector(locdiff);
+}
 
+FVector ACaveGenerator2D::LocalToWorld(const FVector& Location)
+{
+	// TODO rotation
+	return Location + GetActorLocation();
+	
+}
+
+void ACaveGenerator2D::DrawCellsInProximity(const FVector& WorldLocation)
+{
+	// Convert to local space
+	FVector Loc = WorldToLocal(WorldLocation);
+
+	// TODO debug flag
+	// Draw debug figure
+	//UKismetSystemLibrary::DrawDebugSphere(GWorld->GetWorld(), WorldLocation, 50, 10, FColor(0, 255, 255, 255), 10);
+
+	// Find X and Y coordinates in cells map
+	uint8 cx = (uint8)(Loc.X / CellsLocOffsetX);
+	uint8 cy = (uint8)(Loc.Y / CellsLocOffsetY);
+
+	// Check all neighbours if were drawn and draw
+	for (int x = -3; x <= 3; x++) // TODO parameter
+	{
+		for (int y = -3; y <= 3; y++)
+		{
+			FName cell = GetMapName(cx+x, cy+y);
+			
+			if (CellsMap->CellIndexCheck(cx+x, cy+y, 0))
+			{
+				if(CellsMap->IsCellAliveNoIndexCheck(cx+x, cy+y, 0))
+				{
+					UKismetSystemLibrary::DrawDebugSphere(GWorld->GetWorld(), LocalToWorld(FVector((cx+x)*CellsLocOffsetX, (cy+y)*CellsLocOffsetY, 250)), 10, 10, FColor(0, 255, 0, 255), 1);
+
+					if(!CellDrawn.Contains(cell))
+					{
+						// Draw!
+						UKismetSystemLibrary::DrawDebugSphere(GWorld->GetWorld(), LocalToWorld(FVector((cx + x)*CellsLocOffsetX, (cy + y)*CellsLocOffsetY, 250)), 50, 10, FColor(255, 0, 0, 255), 5);
+
+						TArray<FVector> V;
+						V.AddUninitialized(24);
+
+						for (int i = 0; i < 24; i++)
+						{
+							V[i].X = Vertices[i].X + CellsLocOffsetX * (cx+x);
+							V[i].Y = Vertices[i].Y + CellsLocOffsetY * (cy+y);
+							V[i].Z = Vertices[i].Z;
+						}
+
+						ProceduralMeshComponent->CreateMeshSection(CellsIndex, V, Triangles, Normals, UVs, Colors, Tangents, true);
+						CellsIndex++; // TODO cellsDrawn length
+						CellDrawn.Add(cell);
+					}
+				}
+			}
+		}
+	}
+
+}
+
+
+
+FName ACaveGenerator2D::GetMapName(const uint8& X, const uint8& Y)
+{
+	FString str = FString::Printf(TEXT("%04d%04d"), X, Y);
+	return FName(*str);
+}

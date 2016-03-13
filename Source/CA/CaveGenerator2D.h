@@ -50,9 +50,6 @@ public:
 
 
 	UFUNCTION(BlueprintCallable, Category = TheCave)
-	void ShowCells();
-
-	UFUNCTION(BlueprintCallable, Category = TheCave)
 	void ProcessCellsAsync();
 
 	UFUNCTION(BlueprintCallable, Category = TheCave)
@@ -61,6 +58,17 @@ public:
 	
 	UFUNCTION(BlueprintImplementableEvent,Category = TheCave)
 	void ProcessingDone();
+
+	UFUNCTION(BlueprintCallable, Category = TheCave)
+	void DrawCellsInProximity(const FVector& WorldLocation);
+
+	FVector WorldToLocal(const FVector& Location);
+
+	FVector LocalToWorld(const FVector& Location);
+
+	/* Begin AActor interface. */
+	void BeginPlay() override;
+	/* End AActor interface. */
 
 protected:
 	UPROPERTY()
@@ -72,4 +80,18 @@ private:
 	TSharedPtr<FCellsProcessor> CellsProc;
 
 	void ProcessingDoneHandler();
+
+	// Name - X and Y coordinates formatted: XXXXYYYY
+	TMap<FName, bool> CellDrawn;
+	// Can map xy to XXXXYYYY
+	FName GetMapName(const uint8& X, const uint8& Y);
+
+	// TODO move this to struct or spawn static mesh
+	TArray<FVector> Vertices;
+	TArray<int32> Triangles;
+	TArray<FVector> Normals;
+	TArray<FVector2D> UVs;
+	TArray<FColor> Colors;
+	TArray<FProcMeshTangent> Tangents;
+	int32 CellsIndex;
 };

@@ -35,6 +35,11 @@ public:
 		return Cells[InX][InY][InZ].IsAlive;
 	}
 
+	inline bool CellIndexCheck(const uint8& InX, const uint8& InY, const uint8& InZ) const
+	{
+		return InX >= 0 && InY >= 0 && InZ >= 0 && InX < CellsX && InY < CellsY && InZ < CellsZ;
+	}
+
 private:
 	vector<vector<vector<FCell> > > Cells;
 };
