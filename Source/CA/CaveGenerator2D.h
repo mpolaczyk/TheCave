@@ -53,11 +53,14 @@ public:
 	void ShowCells();
 
 	UFUNCTION(BlueprintCallable, Category = TheCave)
-	void ProcessCells();
+	void ProcessCellsAsync();
 
 	UFUNCTION(BlueprintCallable, Category = TheCave)
 	void InitCells();
 
+	
+	UFUNCTION(BlueprintImplementableEvent,Category = TheCave)
+	void ProcessingDone();
 
 protected:
 	UPROPERTY()
@@ -68,6 +71,5 @@ private:
 	TSharedPtr<FCellsMap, ESPMode::ThreadSafe> CellsMap;
 	TSharedPtr<FCellsProcessor> CellsProc;
 
-	
-	
+	void ProcessingDoneHandler();
 };

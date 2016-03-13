@@ -84,5 +84,6 @@ void FCellsProcessor::ThreadFinished()
 		CleanupThreads();
 
 		ProcessingDoneDelegate.ExecuteIfBound();
+		ProcessingDoneDelegate.Unbind();
 	}
 }

@@ -41,6 +41,8 @@ void ACaveGenerator2D::InitCells()
 
 }
 
+
+
 void ACaveGenerator2D::ShowCells()
 {
 	// Template cube with 24 vertices
@@ -82,8 +84,10 @@ void ACaveGenerator2D::ShowCells()
 	}
 }
 
-void ACaveGenerator2D::ProcessCells()
+void ACaveGenerator2D::ProcessCellsAsync()
 {
+	CellsProc->ProcessingDoneDelegate.BindUObject(this, &ACaveGenerator2D::ProcessingDoneHandler);
+
 	CellsProc->ProcessCellsAsync(CellsMap, [this](const FCellsMap* CellsMap, const uint8& CurrentCellX, const uint8& CurrentCellY, const uint8& CurrentCellZ)->bool
 	{
 		uint8 x = CurrentCellX;
@@ -108,6 +112,11 @@ void ACaveGenerator2D::ProcessCells()
 			return n > BirthLimit;
 		}
 	});
+}
+
+void ACaveGenerator2D::ProcessingDoneHandler()
+{
+	ProcessingDone();
 }
 
 

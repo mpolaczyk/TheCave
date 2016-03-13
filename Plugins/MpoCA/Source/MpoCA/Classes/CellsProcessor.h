@@ -8,7 +8,7 @@ class FCellsMap;
 class FCellsWorker;
 struct FCellsRange;
 
-DECLARE_DELEGATE(ProcessingDone)
+DECLARE_DELEGATE(FProcessingDone)
 
 class MPOCA_API FCellsProcessor
 {
@@ -24,7 +24,7 @@ public:
 
 	const FCellsMap* GetCells() const;
 
-	ProcessingDone ProcessingDoneDelegate;
+	FProcessingDone ProcessingDoneDelegate;
 
 private:
 
