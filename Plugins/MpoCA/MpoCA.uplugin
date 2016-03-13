@@ -1,0 +1,20 @@
+{
+    "FileVersion" : 3,
+	
+	"FriendlyName" : "Unreal Engine Cellular Automaton",
+	"Version" : 1,
+	"VersionName" : "1.0",
+	"CreatedBy" : "Marcin Polaczyk",
+	"CreatedByURL" : "",
+	"EngineVersion" : 1579795,
+	"Description" : "",
+	"Category" : "",
+	
+    "Modules" :
+	[
+		{
+			"Name" : "MpoCA",
+			"Type" : "Runtime"
+		}
+	]
+}
